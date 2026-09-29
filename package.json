@@ -1,0 +1,16 @@
+{
+  "name": "react-microfrontend-assignment",
+  "version": "1.0.0",
+  "private": true,
+  "scripts": {
+    "install:all": "npm install --prefix host && npm install --prefix products && npm install --prefix cart",
+    "start": "concurrently -k -n host,products,cart -c blue,green,magenta \"npm run start:host\" \"npm run start:products\" \"npm run start:cart\"",
+    "start:host": "npm run start --prefix host",
+    "start:products": "npm run start --prefix products",
+    "start:cart": "npm run start --prefix cart",
+    "build": "npm run build --prefix products && npm run build --prefix cart && npm run build --prefix host"
+  },
+  "devDependencies": {
+    "concurrently": "^9.2.1"
+  }
+}
