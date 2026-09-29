@@ -34,6 +34,7 @@ module.exports = {
         cart: "cart@http://localhost:3002/remoteEntry.js",
       },
       shared: {
+        "@microfrontend/cart-store": { singleton: true, requiredVersion: false },
         react: { singleton: true, requiredVersion: dependencies.react },
         "react-dom": { singleton: true, requiredVersion: dependencies["react-dom"] },
         "react-router-dom": {

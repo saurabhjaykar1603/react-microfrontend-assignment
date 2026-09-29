@@ -12,7 +12,7 @@ A small storefront built from three independently runnable React applications in
 
 ## Technology Stack
 
-React 18, React DOM, React Router DOM 7, Webpack 5, Webpack Dev Server, Babel, HTML Webpack Plugin, CSS, `localStorage`, browser events, and `concurrently`.
+React 18, React DOM, React Router DOM 7, Zustand 5, Webpack 5, Webpack Dev Server, Babel, HTML Webpack Plugin, CSS, `localStorage`, browser events, and `concurrently`.
 
 ## Project Structure
 
@@ -42,6 +42,9 @@ react-microfrontend-assignment/
 │   ├── src/{index.js,bootstrap.js,App.jsx}
 │   ├── package.json
 │   └── webpack.config.js
+├── shared/
+│   ├── src/index.js             # Zustand cart store and browser-event sync
+│   └── package.json
 ├── package.json
 └── .gitignore
 ```
@@ -74,15 +77,16 @@ Run each command in a separate terminal when developing apps individually. `npm 
 
 The host imports `products/ProductsList` and `cart/CartList` through `React.lazy`. Each remote publishes an exposed component through its own `remoteEntry.js`, which Webpack loads from port 3001 or 3002 when that route is opened. The remotes can also render their components independently at their own root URLs. Only the host owns a `BrowserRouter`.
 
-Each app loads its React entry through an asynchronous `bootstrap.js` import so Webpack can initialize shared modules before rendering. React, React DOM, and React Router DOM are configured as singleton shared dependencies using versions from each app's `package.json`.
+Each app loads its React entry through an asynchronous `bootstrap.js` import so Webpack can initialize shared modules before rendering. React, React DOM, React Router DOM, and `@microfrontend/cart-store` are configured as singleton shared dependencies. The local shared package also works when either remote runs on its own.
 
 ## Cart Communication
 
-Cart data is stored under the `microfrontend_cart` key as `{ id, name, price, quantity }` objects. Cart writes dispatch a `cart:updated` `CustomEvent`; the host badge and cart screen listen for it and read the latest state. They also listen for the native `storage` event so same-origin tabs stay synchronized. Because browser storage belongs to an origin, the standalone remote pages each use their own storage; the federated components loaded inside the host share the host origin and its cart.
+The shared Zustand store owns cart items and actions. Cart data is stored under the `microfrontend_cart` key as `{ id, name, price, quantity }` objects, preserving the original storage format. Store writes dispatch a `cart:updated` `CustomEvent`; the sync hook also listens for this event and the native `storage` event so independent store instances and same-origin tabs stay synchronized. Browser storage belongs to an origin, so standalone remote pages each use their own storage; the federated components loaded inside the host share the host origin and its cart.
 
 ## Features
 
 - Dynamic Module Federation with independent Products and Cart apps
+- Shared Zustand cart state with browser storage persistence
 - Six products with Indian currency formatting
 - Add to cart, remove, quantity controls, and cart totals
 - Persistent cart and live navbar count

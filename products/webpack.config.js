@@ -32,6 +32,7 @@ module.exports = {
       filename: "remoteEntry.js",
       exposes: { "./ProductsList": "./src/components/ProductsList.jsx" },
       shared: {
+        "@microfrontend/cart-store": { singleton: true, requiredVersion: false },
         react: { singleton: true, requiredVersion: dependencies.react },
         "react-dom": { singleton: true, requiredVersion: dependencies["react-dom"] },
         "react-router-dom": {

@@ -1,6 +1,7 @@
-import React, { useEffect, useState } from "react";
+import React from "react";
+import { useCartStore, useCartSync } from "@microfrontend/cart-store";
 import CartItem from "./CartItem";
-import { CART_KEY, clearCart, getCart, removeFromCart, updateQuantity } from "../services/cartService";
+import { clearCart, removeFromCart, updateQuantity } from "../services/cartService";
 import "../styles/cart.css";
 
 const formatPrice = new Intl.NumberFormat("en-IN", {
@@ -10,21 +11,8 @@ const formatPrice = new Intl.NumberFormat("en-IN", {
 });
 
 export default function CartList() {
-  const [cart, setCart] = useState(getCart);
-
-  useEffect(() => {
-    const syncCart = () => setCart(getCart());
-    const onStorage = (event) => {
-      if (event.key === CART_KEY || event.key === null) syncCart();
-    };
-
-    window.addEventListener("cart:updated", syncCart);
-    window.addEventListener("storage", onStorage);
-    return () => {
-      window.removeEventListener("cart:updated", syncCart);
-      window.removeEventListener("storage", onStorage);
-    };
-  }, []);
+  useCartSync();
+  const cart = useCartStore((state) => state.items);
 
   const totalItems = cart.reduce((sum, item) => sum + item.quantity, 0);
   const grandTotal = cart.reduce((sum, item) => sum + item.price * item.quantity, 0);

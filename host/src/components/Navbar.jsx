@@ -1,35 +1,12 @@
-import React, { useEffect, useState } from "react";
+import React from "react";
 import { NavLink } from "react-router-dom";
-
-const CART_KEY = "microfrontend_cart";
-
-function readCartCount() {
-  try {
-    const cart = JSON.parse(window.localStorage.getItem(CART_KEY) || "[]");
-    return Array.isArray(cart)
-      ? cart.reduce((count, item) => count + (Number(item.quantity) || 0), 0)
-      : 0;
-  } catch {
-    return 0;
-  }
-}
+import { useCartStore, useCartSync } from "@microfrontend/cart-store";
 
 export default function Navbar() {
-  const [cartCount, setCartCount] = useState(readCartCount);
-
-  useEffect(() => {
-    const syncCartCount = () => setCartCount(readCartCount());
-    const onStorage = (event) => {
-      if (event.key === CART_KEY || event.key === null) syncCartCount();
-    };
-
-    window.addEventListener("cart:updated", syncCartCount);
-    window.addEventListener("storage", onStorage);
-    return () => {
-      window.removeEventListener("cart:updated", syncCartCount);
-      window.removeEventListener("storage", onStorage);
-    };
-  }, []);
+  useCartSync();
+  const cartCount = useCartStore((state) =>
+    state.items.reduce((count, item) => count + item.quantity, 0)
+  );
 
   return (
     <header className="site-header">
