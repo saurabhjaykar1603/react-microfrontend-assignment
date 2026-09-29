@@ -44,6 +44,11 @@ module.exports = {
       },
     }),
     new HtmlWebpackPlugin({ template: "./public/index.html" }),
+    new HtmlWebpackPlugin({
+      template: "./public/cart-bridge.html",
+      filename: "cart-bridge.html",
+      inject: false,
+    }),
   ],
   devServer: {
     port: 3000,

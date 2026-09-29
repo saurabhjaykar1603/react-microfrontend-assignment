@@ -1,0 +1,52 @@
+<!doctype html>
+<html lang="en">
+  <head><meta charset="UTF-8" /><title>Cart bridge</title></head>
+  <body>
+    <script>
+      const CART_KEY = "microfrontend_cart";
+      const allowedOrigins = new Set(["http://localhost:3001", "http://localhost:3002"]);
+      let parentOrigin = null;
+
+      function readCart() {
+        try {
+          const cart = JSON.parse(localStorage.getItem(CART_KEY) || "[]");
+          return Array.isArray(cart) ? cart : [];
+        } catch {
+          return [];
+        }
+      }
+
+      function isCart(cart) {
+        return Array.isArray(cart) && cart.every((item) =>
+          item &&
+          (typeof item.id === "number" || typeof item.id === "string") &&
+          typeof item.name === "string" &&
+          Number.isFinite(item.price) && item.price >= 0 &&
+          Number.isInteger(item.quantity) && item.quantity >= 1
+        );
+      }
+
+      function sendState() {
+        if (parentOrigin) {
+          window.parent.postMessage({ type: "cart:bridge:state", cart: readCart() }, parentOrigin);
+        }
+      }
+
+      window.addEventListener("message", (event) => {
+        if (!allowedOrigins.has(event.origin) || event.source !== window.parent) return;
+        parentOrigin = event.origin;
+
+        if (event.data?.type === "cart:bridge:read") {
+          sendState();
+        } else if (event.data?.type === "cart:bridge:write" && isCart(event.data.cart)) {
+          localStorage.setItem(CART_KEY, JSON.stringify(event.data.cart));
+          sendState();
+        }
+      });
+
+      window.addEventListener("storage", (event) => {
+        if (event.key === CART_KEY || event.key === null) sendState();
+      });
+    </script>
+  </body>
+</html>

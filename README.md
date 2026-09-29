@@ -19,7 +19,7 @@ React 18, React DOM, React Router DOM 7, Zustand 5, Webpack 5, Webpack Dev Serve
 ```text
 react-microfrontend-assignment/
 ├── host/
-│   ├── public/index.html
+│   ├── public/{index,cart-bridge}.html
 │   ├── src/components/{Navbar,ErrorBoundary}.jsx
 │   ├── src/styles/global.css
 │   ├── src/{index.js,bootstrap.js,App.jsx}
@@ -81,7 +81,9 @@ Each app loads its React entry through an asynchronous `bootstrap.js` import so 
 
 ## Cart Communication
 
-The shared Zustand store owns cart items and actions. Cart data is stored under the `microfrontend_cart` key as `{ id, name, price, quantity }` objects, preserving the original storage format. Store writes dispatch a `cart:updated` `CustomEvent`; the sync hook also listens for this event and the native `storage` event so independent store instances and same-origin tabs stay synchronized. Browser storage belongs to an origin, so standalone remote pages each use their own storage; the federated components loaded inside the host share the host origin and its cart.
+The shared Zustand store owns cart items and actions. Cart data is stored under the `microfrontend_cart` key as `{ id, name, price, quantity }` objects, preserving the original storage format. Store writes dispatch a `cart:updated` `CustomEvent`; the sync hook also listens for this event and the native `storage` event so same-origin tabs stay synchronized.
+
+Browser storage is separated by port. When all three servers run, standalone Products and Cart embed the Host's `cart-bridge.html` in a hidden iframe. A small, origin-checked `postMessage` exchange reads and writes the Host cart, so ports 3000, 3001, and 3002 show the same items. The bridge is included in the production Host build. If the Host is unavailable, each standalone remote still renders with its local cart. Cross-port sync resumes after the Host starts and the standalone page is reloaded; the Host cart is the source of truth.
 
 ## Features
 

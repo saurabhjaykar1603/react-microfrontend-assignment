@@ -2,6 +2,10 @@ import { useEffect } from "react";
 import { create } from "zustand";
 
 export const CART_KEY = "microfrontend_cart";
+const BRIDGE_ORIGIN = "http://localhost:3000";
+let bridgeFrame = null;
+let bridgeReady = false;
+let pendingCart = null;
 
 function readCart() {
   try {
@@ -19,6 +23,16 @@ export const useCartStore = create((set, get) => ({
     set({ items: cart });
     window.localStorage.setItem(CART_KEY, JSON.stringify(cart));
     window.dispatchEvent(new CustomEvent("cart:updated", { detail: cart }));
+    if (window.location.origin !== BRIDGE_ORIGIN) {
+      pendingCart = cart;
+      if (bridgeReady && bridgeFrame?.contentWindow) {
+        bridgeFrame.contentWindow.postMessage(
+          { type: "cart:bridge:write", cart: pendingCart },
+          BRIDGE_ORIGIN
+        );
+        pendingCart = null;
+      }
+    }
     return cart;
   },
 
@@ -73,4 +87,63 @@ export function useCartSync() {
       window.removeEventListener("storage", onStorage);
     };
   }, [syncCart]);
+}
+
+// Standalone remotes use a hidden Host-origin frame to share its localStorage.
+export function useCartBridge() {
+  useEffect(() => {
+    if (window.location.origin === BRIDGE_ORIGIN) return undefined;
+
+    const frame = document.createElement("iframe");
+    frame.src = `${BRIDGE_ORIGIN}/cart-bridge.html`;
+    frame.title = "Cart synchronization";
+    frame.tabIndex = -1;
+    frame.style.display = "none";
+    bridgeFrame = frame;
+    bridgeReady = false;
+
+    const onMessage = (event) => {
+      if (
+        event.origin !== BRIDGE_ORIGIN ||
+        event.source !== frame.contentWindow ||
+        event.data?.type !== "cart:bridge:state" ||
+        !Array.isArray(event.data.cart)
+      ) return;
+
+      bridgeReady = true;
+      if (pendingCart) {
+        frame.contentWindow.postMessage(
+          { type: "cart:bridge:write", cart: pendingCart },
+          BRIDGE_ORIGIN
+        );
+        pendingCart = null;
+        return;
+      }
+
+      const cart = event.data.cart;
+      if (JSON.stringify(readCart()) !== JSON.stringify(cart)) {
+        window.localStorage.setItem(CART_KEY, JSON.stringify(cart));
+      }
+      useCartStore.getState().syncCart(cart);
+      window.dispatchEvent(new CustomEvent("cart:updated", { detail: cart }));
+    };
+
+    const onLoad = () => {
+      frame.contentWindow.postMessage({ type: "cart:bridge:read" }, BRIDGE_ORIGIN);
+    };
+
+    window.addEventListener("message", onMessage);
+    frame.addEventListener("load", onLoad);
+    document.body.appendChild(frame);
+
+    return () => {
+      window.removeEventListener("message", onMessage);
+      frame.removeEventListener("load", onLoad);
+      frame.remove();
+      if (bridgeFrame === frame) {
+        bridgeFrame = null;
+        bridgeReady = false;
+      }
+    };
+  }, []);
 }
