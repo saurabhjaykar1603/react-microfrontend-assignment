@@ -54,7 +54,7 @@ react-microfrontend-assignment/
 Requires Node.js and npm. From a new clone:
 
 ```bash
-git clone <repository>
+git clone https://github.com/saurabhjaykar1603/react-microfrontend-assignment.git
 cd react-microfrontend-assignment
 npm install
 npm run install:all
